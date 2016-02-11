@@ -1,0 +1,37 @@
+<?xml version="1.0" ?>
+<project name="static-resources" basedir=".." >
+	
+	<target name="buildStaticResources" depends="buildBackOfficeStyles, buildBoxOfficeExpress, buildBoxOfficeReports, buildPublicTicketTheme, buildSubsRenewalLanding, buildTinyMCE, buildFacebookButtonStyles" />
+	
+	<target name="buildBackOfficeStyles">
+		<zip basedir="static-resources/BackOfficeStyles" destfile="src/staticresources/BackOfficeStyles.resource" />
+	</target>
+	
+	<target name="buildBoxOfficeExpress">
+		<zip basedir="resource-bundles/BoxOfficeExpress.resource" destfile="src/staticresources/BoxOfficeExpress.resource" />
+	</target>
+	
+	<target name="buildBoxOfficeReports">
+		<zip basedir="static-resources/BoxOfficeReports" destfile="src/staticresources/BoxOfficeReports.resource" />
+	</target>
+	
+	<target name="buildPublicTicketTheme">
+		<zip basedir="static-resources/PublicTicketTheme" destfile="src/staticresources/PublicTicketTheme.resource" />
+	</target>
+	
+	<target name="buildSubsRenewalLanding">
+		<zip basedir="static-resources/SubsRenewalLanding" destfile="src/staticresources/SubsRenewalLanding.resource" />
+	</target>
+	
+	<target name="buildTinyMCE">
+		<zip basedir="static-resources/TinyMCE" destfile="src/staticresources/TinyMCE.resource" />
+	</target>
+
+	<target name="buildFacebookButtonStyles">
+		<zip basedir="static-resources/FacebookButtonStyles" destfile="src/staticresources/FacebookButtonStyles.resource" />
+	</target>
+	
+	<target name="buildJQuery" >
+		<zip basedir="resource-bundles/jQuery.resource" destfile="src/staticresources/jquery.resource" />
+	</target>
+</project>

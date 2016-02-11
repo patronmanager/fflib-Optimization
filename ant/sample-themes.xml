@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<project name="sample-themes" basedir=".." >
+	
+	<target name="buildSampleThemes" depends="buildSampleTheme, buildSampleThemeKermit" />
+	
+	<target name="buildSampleTheme">
+		<zip basedir="sample-themes/sample_theme" excludes="sample_theme.zip" destfile="sample-themes/sample_theme/sample_theme.zip" />
+	</target>
+	
+	<target name="buildSampleThemeKermit">
+		<zip basedir="sample-themes/sample_theme_kermit" excludes="sample_theme_kermit.zip" destfile="sample-themes/sample_theme_kermit/sample_theme_kermit.zip" />
+	</target>
+</project>

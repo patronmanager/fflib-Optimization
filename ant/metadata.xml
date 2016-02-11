@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<project name="metadata">
+
+
+<target name="fixUpAllReferencedPackages" depends="fixUpPatronTrxVersion, 
+    fixUpPatronSignupVersion, 
+    fixUpPatronPayVersion, 
+    fixUpPatronDonateVersion,
+    fixUpPatronMailVersion"/>
+
+<target name="fixUpPatronTrxVersion">
+    <antcall target="fixUpReferencedPackage">
+        <param name="namespace" value="PatronTrx"/>
+        <param name="major" value="25"/>
+        <param name="minor" value="0"/>
+    </antcall>
+</target>
+<target name="fixUpPatronSignupVersion">
+    <antcall target="fixUpReferencedPackage">
+        <param name="namespace" value="PatronSignup"/>
+        <param name="major" value="25"/>
+        <param name="minor" value="5"/>
+    </antcall>
+</target>
+<target name="fixUpPatronDonateVersion">
+    <antcall target="fixUpReferencedPackage">
+        <param name="namespace" value="PatronDonate"/>
+        <param name="major" value="25"/>
+        <param name="minor" value="3"/>
+    </antcall>
+</target>
+<target name="fixUpPatronPayVersion">
+    <antcall target="fixUpReferencedPackage">
+        <param name="namespace" value="PatronPay"/>
+        <param name="major" value="25"/>
+        <param name="minor" value="4"/>
+    </antcall>
+</target>
+<target name="fixUpPatronMailVersion">
+    <antcall target="fixUpReferencedPackage">
+        <param name="namespace" value="PatronMail"/>
+        <param name="major" value="22"/>
+        <param name="minor" value="0"/>
+    </antcall>
+</target>
+
+<target name="fixUpReferencedPackage">
+    <replaceregexp match="(&lt;packageVersions&gt;.*&lt;majorNumber&gt;)(\d+)(&lt;/majorNumber&gt;.*&lt;minorNumber&gt;)(\d+)(&lt;/minorNumber&gt;.*&lt;namespace&gt;${namespace}&lt;/namespace&gt;.*?&lt;/packageVersions&gt;)+?"
+        replace="\1${major}\3${minor}\5" flags="gs">
+        <fileset dir=".">
+            <include name="**/*meta.xml"/>
+        </fileset>
+    </replaceregexp>
+</target>
+
+</project>
