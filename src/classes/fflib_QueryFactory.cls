@@ -571,6 +571,7 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 				if (!field.equals(previousQf)) {
 					result += field + ', ';
 				}
+				previousQf = field;
 			}
 		}else{
 			for (QueryField field : fields)
