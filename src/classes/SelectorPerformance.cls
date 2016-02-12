@@ -13,6 +13,7 @@ public with sharing class SelectorPerformance {
 		for(Integer i=0; i<3; i++){
 		    Selector_Contact s = new Selector_Contact();
 			fflib_QueryFactory qf = s.newQueryFactory();
+			qf.setSortSelectFields(false);
 
 		    Long parentStart = DateTime.now().getTime();
 		    qf.selectFields(accountFields);

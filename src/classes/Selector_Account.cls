@@ -6,7 +6,6 @@ public with sharing class Selector_Account extends fflib_SObjectSelector{
 	public List<Schema.SObjectField> getSObjectFieldList()
 	{
 		return new List<Schema.SObjectField> {
-			Account.AccountNumber,
 			Account.AccountSource,
 			Account.AnnualRevenue,
 			Account.BillingCity,
@@ -34,11 +33,9 @@ public with sharing class Selector_Account extends fflib_SObjectSelector{
 			Account.Name,
 			Account.NumberOfEmployees,
 			Account.OwnerId,
-			Account.Ownership,
 			Account.ParentId,
 			Account.Phone,
 			Account.PhotoUrl,
-			Account.Rating,
 			Account.ShippingCity,
 			Account.ShippingCountry,
 			Account.ShippingLatitude,
@@ -46,11 +43,9 @@ public with sharing class Selector_Account extends fflib_SObjectSelector{
 			Account.ShippingPostalCode,
 			Account.ShippingState,
 			Account.ShippingStreet,
-			Account.Sic,
 			Account.SicDesc,
 			Account.Site,
 			Account.SystemModstamp,
-			Account.TickerSymbol,
 			Account.Type,
 			Account.Website
 		};
