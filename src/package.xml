@@ -39,5 +39,5 @@
         <members>*</members>
         <name>CustomLabels</name>
     </types>
-    <version>35.0</version>
+    <version>34.0</version>
 </Package>
