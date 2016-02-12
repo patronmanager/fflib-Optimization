@@ -12,8 +12,7 @@ public with sharing class SelectorPerformance {
 		List<fflib_QueryFactory> qfList = new List<fflib_QueryFactory>();
 		for(Integer i=0; i<3; i++){
 		    Selector_Contact s = new Selector_Contact();
-			fflib_QueryFactory qf = s.newQueryFactory();
-			qf.setSortSelectFields(false);
+			fflib_QueryFactory qf = s.newLightweightQueryFactory();
 
 		    Long parentStart = DateTime.now().getTime();
 		    qf.selectFields(accountFields);

@@ -44,7 +44,6 @@ public with sharing class Selector_Account extends fflib_SObjectSelector{
 			Account.ShippingState,
 			Account.ShippingStreet,
 			Account.SicDesc,
-			Account.Site,
 			Account.SystemModstamp,
 			Account.Type,
 			Account.Website

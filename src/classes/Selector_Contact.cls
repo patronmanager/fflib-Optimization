@@ -20,7 +20,6 @@ public with sharing class Selector_Contact extends fflib_SObjectSelector
 			Contact.EmailBouncedReason,
 			Contact.Fax,
 			Contact.FirstName,
-			Contact.HasOptedOutOfEmail,
 			Contact.HomePhone,
 			Contact.Id,
 			Contact.IsDeleted,
