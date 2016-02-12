@@ -1,3 +1,7 @@
 /.git
 /.settings
 /Referenced Packages
+/ant
+/build.properties
+/build.xml
+/salesforce.schema
