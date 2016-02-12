@@ -62,6 +62,9 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 	public Schema.SObjectType table {get; private set;}
 	@testVisible
 	private List<QueryField> fields; 
+	
+	private List<String> fldStrings;
+	
 	private String conditionExpression;
 	private Integer limitCount;
 	private Integer offset;
@@ -83,7 +86,8 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 	**/
 	private Schema.ChildRelationship relationship;
 	private Map<Schema.ChildRelationship, fflib_QueryFactory> subselectQueryMap;
-
+	
+	
 	private QueryField getFieldToken(String fieldName){
 		QueryField result;
 		if(!fieldName.contains('.')){ //single field
@@ -118,7 +122,8 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 		}
 		return result;
 	}
-
+	
+	
 	/**
 	 * fflib_QueryFactory instances will be considered equal if they produce the same SOQL query.
 	 * A faster comparison will first be attempted to check if they apply to the same table, and contain the same number of fields selected.
@@ -126,7 +131,7 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 	 * @param obj the object to check equality of.
 	**/
 	public boolean equals(Object obj){
-		if( !(obj instanceof fflib_QueryFactory) || ((fflib_QueryFactory)obj).table != this.table || ((fflib_QueryFactory)obj).fields.size() != this.fields.size() )
+		if( !(obj instanceof fflib_QueryFactory) || ((fflib_QueryFactory)obj).table != this.table || ((fflib_QueryFactory)obj).fldStrings.size() != this.fldStrings.size() )
 			return false;
 		return ((fflib_QueryFactory)obj).toSOQL() == this.toSOQL();
 	}
@@ -138,7 +143,10 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 	**/
 	public fflib_QueryFactory(Schema.SObjectType table){
 		this.table = table;
-		fields = new List<QueryField>();
+		// fields = new List<QueryField>();
+		
+		this.fldStrings = new List<String>();
+		
 		order = new List<Ordering>();
 		enforceFLS = false;
 	}
@@ -192,7 +200,10 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 	 * @param fieldName the API name of the field to add to the query's SELECT clause.
 	 **/
 	public fflib_QueryFactory selectField(String fieldName){ 		
-		fields.add( getFieldToken(fieldName) );
+		//fields.add( getFieldToken(fieldName) );
+		
+		this.fldStrings.add(fieldName);
+		
 		return this;
 	} 
 	/**
@@ -202,11 +213,14 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 	 * @exception InvalidFieldException If the field is null {@code field}.
 	**/
 	public fflib_QueryFactory selectField(Schema.SObjectField field){
+		/*
 		if(field == null)
 			throw new InvalidFieldException(null,this.table);
 		if (enforceFLS) 
 			fflib_SecurityUtils.checkFieldIsReadable(table, field);
 		fields.add( new QueryField(field) );
+		*/
+		this.fldStrings.add(field.getDescribe().getLocalName());
 		return this;
 	}
 	/**
@@ -214,12 +228,15 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 	 * @param fieldNames the Set of field API names to select.
 	**/
 	public fflib_QueryFactory selectFields(Set<String> fieldNames){
+		/*
 		List<String> fieldList = new List<String>();
 		List<QueryField> toAdd = new List<QueryField>();
 		for(String fieldName:fieldNames){
 			toAdd.add( getFieldToken(fieldName) );
 		}	
 		fields.addAll(toAdd);
+		*/
+		this.fldStrings.addAll(fieldNames);
 		return this;
 	}
 	/**
@@ -227,10 +244,13 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 	 * @param fieldNames the List of field API names to select.
 	**/
 	public fflib_QueryFactory selectFields(List<String> fieldNames){
+		/*
 		List<QueryField> toAdd = new List<QueryField>();
 		for(String fieldName:fieldNames)
 			toAdd.add( getFieldToken(fieldName) );
 		fields.addAll(toAdd);
+		*/
+		this.fldStrings.addAll(fieldNames);
 		return this;
 	}
 	/**
@@ -240,11 +260,14 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 	**/
 	public fflib_QueryFactory selectFields(Set<Schema.SObjectField> fields){
 		for(Schema.SObjectField token:fields){
+			/*
 			if(token == null)
 				throw new InvalidFieldException();	
 			if (enforceFLS) 
 				fflib_SecurityUtils.checkFieldIsReadable(table, token);	
 			this.fields.add( new QueryField(token) );
+			*/
+			this.fldStrings.add(token.getDescribe().getLocalName());
 		}
 		return this;
 	}
@@ -255,11 +278,14 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 	**/
 	public fflib_QueryFactory selectFields(List<Schema.SObjectField> fields){
 		for(Schema.SObjectField token:fields){
+			/*
 			if(token == null)
 				throw new InvalidFieldException();
 			if (enforceFLS) 
 				fflib_SecurityUtils.checkFieldIsReadable(table, token);		
 			this.fields.add( new QueryField(token) );
+			*/
+			this.fldStrings.add(token.getDescribe().getLocalName());
 		}
 		return this;
 	}
@@ -281,7 +307,7 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 		for(Schema.FieldSetMember field: fieldSet.getFields()){
 			if(!allowCrossObject && field.getFieldPath().contains('.'))
 				throw new InvalidFieldSetException('Cross-object fields not allowed and field "'+field.getFieldPath()+'"" is a cross-object field.');
-			fields.add( getFieldToken(field.getFieldPath()) );
+			this.fldStrings.add(field.getFieldPath());
 		}
 		return this;
 	}
@@ -557,6 +583,7 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 	 * Check to see if subqueries queries need to be added after the field list.
 	**/
 	public String toSOQL(){
+		/*
 		String result = 'SELECT ';
 		//if no fields have been added, just add the Id field so that the query or subquery will not just fail
 		if (fields.size() == 0){
@@ -577,13 +604,16 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 			for (QueryField field : fields)
 				result += field + ', ';
 		}
+		*/
+		
+		String result = 'SELECT ' + String.join(this.fldStrings, ', ');
 		
 		if(subselectQueryMap != null && !subselectQueryMap.isEmpty()){
 			for (fflib_QueryFactory childRow : subselectQueryMap.values()){
 				result += ' (' + childRow.toSOQL() + '), ';
 			}	
 		}
-		result = result.substring(0,result.length()-2) + ' FROM ' + (relationship != null ? relationship.getRelationshipName() : table.getDescribe().getName());
+		result = result.removeEnd(', ') + ' FROM ' + (relationship != null ? relationship.getRelationshipName() : table.getDescribe().getName());
 		if(conditionExpression != null)
 			result += ' WHERE '+conditionExpression;
 
@@ -591,7 +621,7 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 			result += ' ORDER BY ';
 			for(Ordering o:order)
 				result += o.toSOQL() +', ';
-			result = result.substring(0,result.length()-2);
+			result = result.removeEnd(', ');
 		}
 	
 		if(limitCount != null)
