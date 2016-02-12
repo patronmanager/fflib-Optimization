@@ -10,9 +10,10 @@ public with sharing class SelectorPerformance {
 		Long start = DateTime.now().getTime();
 		System.debug('Begin');
 		List<fflib_QueryFactory> qfList = new List<fflib_QueryFactory>();
-		for(Integer i=0; i<3; i++){
+		for(Integer i=0; i<10; i++){
 		    Selector_Contact s = new Selector_Contact();
 			fflib_QueryFactory qf = s.newLightweightQueryFactory();
+			qf.setSortSelectFields(false);
 
 		    Long parentStart = DateTime.now().getTime();
 		    qf.selectFields(accountFields);
