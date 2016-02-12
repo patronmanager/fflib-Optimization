@@ -71,9 +71,11 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 	/* This can optionally be enforced (or not) by calling the setEnforceFLS method prior to calling 
 	/* one of the selectField or selectFieldset methods.
 	**/
-	private Boolean enforceFLS;
+	private Boolean enforceFLS = false;
 	
 	private Boolean sortSelectFields = true;
+	
+	private Boolean lightweight = false;
 	
 	/**
 	 * The relationship and  subselectQueryMap variables are used to support subselect queries.  Subselects can be added to 
@@ -85,6 +87,12 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 	private Map<Schema.ChildRelationship, fflib_QueryFactory> subselectQueryMap;
 
 	private QueryField getFieldToken(String fieldName){
+		
+		// FLS will not be enforced, so we are going to take a lot of shortcuts in the name of performance
+		if (this.lightweight) {
+			return new LightweightQueryField(fieldName);
+		}
+		
 		QueryField result;
 		if(!fieldName.contains('.')){ //single field
 			Schema.SObjectField token = fflib_SObjectDescribe.getDescribe(table).getField(fieldName.toLowerCase());
@@ -130,7 +138,16 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 			return false;
 		return ((fflib_QueryFactory)obj).toSOQL() == this.toSOQL();
 	}
-
+	
+	public fflib_QueryFactory(Schema.SObjectType table, Boolean lightweight) {
+		this(table);
+		this.lightweight = lightweight;
+		if (lightweight) {
+			this.enforceFLS = false;
+			this.sortSelectFields = false;
+		}
+	}
+	
 	/**
 	 * Construct a new fflib_QueryFactory instance with no options other than the FROM caluse. 
 	 * You *must* call selectField(s) before {@link #toSOQL} will return a valid, runnable query.
@@ -171,6 +188,9 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 	 * @param enforce whether to enforce field level security (read)
 	 **/
 	public fflib_QueryFactory setEnforceFLS(Boolean enforce){
+		if (this.lightweight && enforce) {
+			throw new InvalidOperationException('Calling setEnforceFLS(true) on a "lightweight" QueryFactory instance is not allowed.');
+		}
 		this.enforceFLS = enforce;
 		return this;
 	}
@@ -192,7 +212,7 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 	 * @param fieldName the API name of the field to add to the query's SELECT clause.
 	 **/
 	public fflib_QueryFactory selectField(String fieldName){ 		
-		fields.add( getFieldToken(fieldName) );
+		this.fields.add( getFieldToken(fieldName) );
 		return this;
 	} 
 	/**
@@ -206,7 +226,10 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 			throw new InvalidFieldException(null,this.table);
 		if (enforceFLS) 
 			fflib_SecurityUtils.checkFieldIsReadable(table, field);
-		fields.add( new QueryField(field) );
+		if (lightweight)
+			this.fields.add(new LightweightQueryField(field));
+		else
+			this.fields.add(new QueryField(field));
 		return this;
 	}
 	/**
@@ -219,7 +242,7 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 		for(String fieldName:fieldNames){
 			toAdd.add( getFieldToken(fieldName) );
 		}	
-		fields.addAll(toAdd);
+		this.fields.addAll(toAdd);
 		return this;
 	}
 	/**
@@ -244,7 +267,10 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 				throw new InvalidFieldException();	
 			if (enforceFLS) 
 				fflib_SecurityUtils.checkFieldIsReadable(table, token);	
-			this.fields.add( new QueryField(token) );
+			if (lightweight)
+				this.fields.add(new LightweightQueryField(token));
+			else
+				this.fields.add(new QueryField(token));
 		}
 		return this;
 	}
@@ -259,7 +285,10 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 				throw new InvalidFieldException();
 			if (enforceFLS) 
 				fflib_SecurityUtils.checkFieldIsReadable(table, token);		
-			this.fields.add( new QueryField(token) );
+			if (lightweight)
+				this.fields.add(new LightweightQueryField(token));
+			else
+				this.fields.add(new QueryField(token));
 		}
 		return this;
 	}
@@ -509,7 +538,7 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 	**/
     public fflib_QueryFactory addOrdering(SObjectField field, SortOrder direction, Boolean nullsLast){
 		order.add(
-			new Ordering(new QueryField(field), direction, nullsLast)
+			new Ordering(this.lightweight ? new LightweightQueryField(field) : new QueryField(field), direction, nullsLast)
 		);	
 		return this;
     }
@@ -547,7 +576,7 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 	**/
     public fflib_QueryFactory addOrdering(SObjectField field, SortOrder direction){
 		order.add(
-			new Ordering(new QueryField(field), direction)
+			new Ordering(this.lightweight ? new LightweightQueryField(field) : new QueryField(field), direction)
 		);	
 		return this;
     }
@@ -677,8 +706,37 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 		}
 	}
 
+	public class LightweightQueryField extends QueryField implements Comparable {
+		String fieldName;
+		
+		private LightweightQueryField() {}
+		
+		public LightweightQueryField(String fieldName) {
+			this.fieldName = fieldName;
+		}
+		
+		public LightweightQueryField(Schema.SObjectField field) {
+			this.fieldName = field.getDescribe().getLocalName();
+		}
+		
+		public override String toString() { return this.fieldName; }
+		
+		public override Integer hashCode() { return this.fieldName.hashCode(); }
+		
+		public override Boolean equals(Object obj) { return this.fieldName.equals(obj); }
+		
+		public override Integer compareTo(Object obj) {
+			if (obj == null || !(obj instanceof LightweightQueryField))
+				return 1;
+			
+			if (this.fieldName == null)
+				return -1;
+				
+			return this.fieldName.compareTo(((LightweightQueryField) obj).toString());
+		}
+	}
 
-	public class QueryField implements Comparable{
+	public virtual class QueryField implements Comparable{
 		List<Schema.SObjectField> fields;
 
 		/**
@@ -694,7 +752,9 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 		public List<SObjectField> getFieldPath(){
 			return fields.clone();
 		}
-
+		
+		private QueryField() {}
+		
 		@testVisible 
 		private QueryField(List<Schema.SObjectField> fields){
 			if(fields == null || fields.size() == 0)
@@ -707,7 +767,7 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 				throw new InvalidFieldException('Invalid field: null');
 			fields = new List<Schema.SObjectField>{ field };
 		}
-		public override String toString(){
+		public virtual override String toString(){
 			String result = '';
 			Integer size = fields.size();
 			for (Integer i=0; i<size; i++)
@@ -725,10 +785,10 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 			}
 			return result;
 		} 
-		public integer hashCode(){
+		public virtual integer hashCode(){
 			return String.valueOf(this.fields).hashCode();
 		}
-		public boolean equals(Object obj){
+		public virtual boolean equals(Object obj){
 			//Easy checks first
 			if(obj == null || !(obj instanceof QueryField))
 				return false;
@@ -757,7 +817,7 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 		 * - QueryFields with more joins give +1, while fewer joins give -1
 		 * - For anything else, compare the toStrings of this and the supplied object.
 		 **/
-		public Integer compareTo(Object o){
+		public virtual Integer compareTo(Object o){
 			if(o == null || !(o instanceof QueryField))
 				return -2; //We can't possibly do a sane comparison against an unknwon type, go athead and let it "win"
 			
@@ -787,5 +847,6 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 	}
 	public class InvalidFieldSetException extends Exception{}
 	public class NonReferenceFieldException extends Exception{}
-	public class InvalidSubqueryRelationshipException extends Exception{}	
+	public class InvalidSubqueryRelationshipException extends Exception{}
+	public class InvalidOperationException extends Exception{}
 }
