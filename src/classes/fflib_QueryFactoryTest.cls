@@ -664,8 +664,8 @@ private class fflib_QueryFactoryTest {
 		}
 		String expectedQuery = 
 			'SELECT '
-			// This is a straight alphabetic sort now
-			+'CreatedBy.ManagerId, CreatedBy.Name, FirstName, Id, LastModifiedBy.Email, LastName '
+			+'FirstName, Id, LastName, ' //less joins come first, alphabetically
+			+'CreatedBy.ManagerId, CreatedBy.Name, LastModifiedBy.Email ' //alphabetical on the same number of joinrs'
 			+'FROM User';
 		System.assertEquals(qf1.toSOQL(), qf2.toSOQL());
 		System.assertEquals(expectedQuery, qf1.toSOQL());

@@ -557,47 +557,46 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 	 * Check to see if subqueries queries need to be added after the field list.
 	**/
 	public String toSOQL(){
-		List<String> selectList = new List<String>();
+		String result = 'SELECT ';
 		//if no fields have been added, just add the Id field so that the query or subquery will not just fail
 		if (fields.size() == 0){
 			if (enforceFLS) fflib_SecurityUtils.checkFieldIsReadable(table, 'Id');
-			selectList.add('Id');
-		}else{
-			for (QueryField field : fields) {
-				selectList.add(field.toString());
-			}
-			if (sortSelectFields) {
-				selectList.sort();
-				// Now that that field list is sorted, it's easy to de-dupe
-				List<String> deDupedList = new List<String>{ selectList[0] };
-				for (Integer i=1; i < selectList.size(); i++) {
-					if (selectList[i] != deDupedList[i-1]) {
-						deDupedList.add(selectList[i]);
-					}
+			result += 'Id  ';
+		}else if(sortSelectFields){
+			List<QueryField> fieldsToQuery = new List<QueryField>(fields);
+			fieldsToQuery.sort(); //delegates to QueryFilter's comparable implementation
+			// Now that the QueryField list is sorted, we can de-dupe
+			QueryField previousQf = null;
+			for(QueryField field:fieldsToQuery){
+				if (!field.equals(previousQf)) {
+					result += field + ', ';
 				}
-				selectList = deDupedList;
+				previousQf = field;
 			}
+		}else{
+			for (QueryField field : fields)
+				result += field + ', ';
 		}
-		// Append child relationship queries
+		
 		if(subselectQueryMap != null && !subselectQueryMap.isEmpty()){
-			for (fflib_QueryFactory childRow : subselectQueryMap.values()) {
-				selectList.add('(' + childRow.toSOQL() + ')');
-			}
+			for (fflib_QueryFactory childRow : subselectQueryMap.values()){
+				result += ' (' + childRow.toSOQL() + '), ';
+			}	
 		}
-		String soql = 'SELECT ' + String.join(selectList, ', ') + ' FROM ' + (relationship != null ? relationship.getRelationshipName() : table.getDescribe().getName());
-		if (conditionExpression != null)
-			soql += ' WHERE ' + conditionExpression;
-		
+		result = result.substring(0,result.length()-2) + ' FROM ' + (relationship != null ? relationship.getRelationshipName() : table.getDescribe().getName());
+		if(conditionExpression != null)
+			result += ' WHERE '+conditionExpression;
+
 		if(order.size() > 0){
-			soql += ' ORDER BY ';
+			result += ' ORDER BY ';
 			for(Ordering o:order)
-				soql += o.toSOQL() +', ';
-			soql = soql.removeEnd(', ');
+				result += o.toSOQL() +', ';
+			result = result.substring(0,result.length()-2);
 		}
-		
+	
 		if(limitCount != null)
-			soql += ' LIMIT ' + limitCount;
-		return soql;
+			result += ' LIMIT '+limitCount;
+		return result;
 	}
 
 	/**
@@ -681,7 +680,6 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 
 	public class QueryField implements Comparable{
 		List<Schema.SObjectField> fields;
-		String fieldString;
 
 		/**
 		 * The first field in the path to to field being queried
@@ -710,28 +708,22 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 			fields = new List<Schema.SObjectField>{ field };
 		}
 		public override String toString(){
-			// Since the fields collection is immutable, we can compute the 
-			// string representation one time and cache it in an instance variable
-			if (String.isBlank(this.fieldString)) {
-				List<String> fieldElements = new List<String>();
-				Integer size = fields.size();
-				for (Integer i=0; i<size; i++)
+			String result = '';
+			Integer size = fields.size();
+			for (Integer i=0; i<size; i++)
+			{
+				if (i>0)
 				{
-					fieldElements.add(fields[i].getDescribe().getName());
-					if (i>0)
-					{
-						// Look back at the previous field element and change it if necessary
-						String prevFieldElement = fieldElements[i-1];
-						if (prevFieldElement.endsWithIgnoreCase('Id'))
-							fieldElements[i-1] = prevFieldElement.removeEndIgnoreCase('Id');
-						else if (prevFieldElement.endsWithIgnoreCase('__c')) {
-							fieldElements[i-1] = prevFieldElement.removeEndIgnoreCase('__c') + '__r';
-						}
+					if (result.endsWithIgnoreCase('Id'))
+						result = result.removeEndIgnoreCase('Id');
+					else if (result.endsWithIgnoreCase('__c')) {
+						result = result.removeEndIgnoreCase('__c') + '__r';
 					}
+					result += '.';
 				}
-				this.fieldString = String.join(fieldElements, '.'); 
+				result += fields[i].getDescribe().getName();
 			}
-			return this.fieldString; 
+			return result;
 		} 
 		public integer hashCode(){
 			return String.valueOf(this.fields).hashCode();
