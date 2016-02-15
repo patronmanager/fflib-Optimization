@@ -237,12 +237,9 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 	 * @param fieldNames the Set of field API names to select.
 	**/
 	public fflib_QueryFactory selectFields(Set<String> fieldNames){
-		List<String> fieldList = new List<String>();
-		List<QueryField> toAdd = new List<QueryField>();
 		for(String fieldName:fieldNames){
-			toAdd.add( getFieldToken(fieldName) );
-		}	
-		this.fields.addAll(toAdd);
+			this.fields.add( getFieldToken(fieldName) );
+		}
 		return this;
 	}
 	/**
@@ -250,10 +247,8 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 	 * @param fieldNames the List of field API names to select.
 	**/
 	public fflib_QueryFactory selectFields(List<String> fieldNames){
-		List<QueryField> toAdd = new List<QueryField>();
 		for(String fieldName:fieldNames)
-			toAdd.add( getFieldToken(fieldName) );
-		fields.addAll(toAdd);
+			this.fields.add( getFieldToken(fieldName) );
 		return this;
 	}
 	/**
@@ -721,17 +716,29 @@ public class fflib_QueryFactory { //No explicit sharing declaration - inherit fr
 		
 		public override String toString() { return this.fieldName; }
 		
-		public override Integer hashCode() { return this.fieldName.hashCode(); }
+		public override Integer hashCode() {
+			return (this.fieldName == null) ? 0 : this.fieldName.hashCode();
+		}
 		
-		public override Boolean equals(Object obj) { return this.fieldName.equals(obj); }
+		public override Boolean equals(Object obj) {
+			// compareTo does all the heavy lifting needed to determine equality
+			return compareTo(obj) == 0;
+		}
 		
 		public override Integer compareTo(Object obj) {
 			if (obj == null || !(obj instanceof LightweightQueryField))
 				return 1;
 			
-			if (this.fieldName == null)
-				return -1;
-				
+			if (this.fieldName == null) {
+				if (((LightweightQueryField) obj).toString() == null)
+					// Both objects are non-null, but their fieldName is null
+					return 0;
+				else
+					// Our fieldName is null, but theirs isn't
+					return -1;
+			}
+			
+			// Both objects have non-null fieldNames, so just return the result of String.compareTo
 			return this.fieldName.compareTo(((LightweightQueryField) obj).toString());
 		}
 	}
