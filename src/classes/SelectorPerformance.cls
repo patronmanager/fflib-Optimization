@@ -11,18 +11,18 @@ public with sharing class SelectorPerformance {
 		System.debug('Begin');
 		List<fflib_QueryFactory> qfList = new List<fflib_QueryFactory>();
 		for(Integer i=0; i<10; i++){
-		    Selector_Contact s = new Selector_Contact();
+			Selector_Contact s = new Selector_Contact();
 			fflib_QueryFactory qf = s.newQueryFactory();
 
-		    Long parentStart = DateTime.now().getTime();
-		    qf.selectFields(accountFields);
-		    parentSelectAggregate += DateTime.now().getTime() - parentStart;
+			Long parentStart = DateTime.now().getTime();
+			qf.selectFields(accountFields);
+			parentSelectAggregate += DateTime.now().getTime() - parentStart;
 
-		    Long grandparentStart = DateTime.now().getTime();
-		    qf.selectFields(grandparentFields);
-		    grandparentSelectAggregate += DateTime.now().getTime() - grandparentStart;
-		    
-		    qfList.add(qf);
+			Long grandparentStart = DateTime.now().getTime();
+			qf.selectFields(grandparentFields);
+			grandparentSelectAggregate += DateTime.now().getTime() - grandparentStart;
+			
+			qfList.add(qf);
 			System.debug('QF'+i);
 		}
 
@@ -62,11 +62,11 @@ public with sharing class SelectorPerformance {
 		Long firstHit = 0;
 		Integer i = 0;
 		for(String field : fields){
-//			fflib_SObjectDescribe.instanceCache.get('account');//.getField(field);		
-			fflib_SObjectDescribe.getDescribe('Account').getField(field);		
+			SObjectField f = fflib_SObjectDescribe.getDescribe('Account').getField(field);		
 			if(i == 0){
 				firstHit = DateTime.now().getTime() - start;
 			}
+			DescribeFieldResult d = f.getDescribe();
 			i++;
 
 		}
