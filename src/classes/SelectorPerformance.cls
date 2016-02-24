@@ -1,5 +1,5 @@
 public with sharing class SelectorPerformance {
-	public static void go() {
+	public static void go(Boolean lightweight) {
 		Long preloadStart = DateTime.now().getTime();
 		List<String> accountFields = Selector_Contact.ACCOUNT_FIELDS;
 		List<String> grandparentFields = Selector_Contact.GRANDPARENT_ACCOUNT_FIELDS;
@@ -12,7 +12,11 @@ public with sharing class SelectorPerformance {
 		List<fflib_QueryFactory> qfList = new List<fflib_QueryFactory>();
 		for(Integer i=0; i<10; i++){
 			Selector_Contact s = new Selector_Contact();
-			fflib_QueryFactory qf = s.newQueryFactory();
+			fflib_QueryFactory qf;
+			if (lightweight)
+				qf = s.newLightweightQueryFactory();
+			else
+				qf = s.newQueryFactory();
 
 			Long parentStart = DateTime.now().getTime();
 			qf.selectFields(accountFields);
